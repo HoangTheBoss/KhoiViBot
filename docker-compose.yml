@@ -4,3 +4,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - OPENAI_API_KEY
+      - DISCORD_TOKEN
