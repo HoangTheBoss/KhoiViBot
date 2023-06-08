@@ -1,0 +1,18 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Get the commit ID
+      id: commit
+      run: echo "::set-output name=commit::$(git rev-parse --short HEAD)"
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag my-image-name:${{ steps.commit.outputs.commit }}
