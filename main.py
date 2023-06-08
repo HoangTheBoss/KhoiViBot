@@ -202,7 +202,7 @@ def send_message(conversation: Conversation):
     response_content = response['choices'][0]['message']['content']
 
     # if add_message:
-    #     conversation.add_message(role='assistant', content=response_content)
+    conversation.add_message(role='assistant', content=response_content)
 
     return response_content
 
