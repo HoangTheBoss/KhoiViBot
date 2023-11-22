@@ -12,7 +12,7 @@ from interactions import Client, Intents, slash_command, SlashContext, slash_opt
     AutoArchiveDuration, ContextMenuContext, message_context_menu, Embed
 from interactions.api.events import MessageCreate
 
-from OpenFunctions.BaseFunction import BaseFunction
+# from OpenFunctions.BaseFunction import BaseFunction
 
 
 # class Role(Enum):
