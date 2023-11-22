@@ -1,8 +1,10 @@
 import os
 import textwrap
+from enum import Enum
 from typing import Dict
 
-import openai
+# import arxiv
+from openai import OpenAI
 import tiktoken
 
 import interactions
@@ -10,12 +12,21 @@ from interactions import Client, Intents, slash_command, SlashContext, slash_opt
     AutoArchiveDuration, ContextMenuContext, message_context_menu, Embed
 from interactions.api.events import MessageCreate
 
+from OpenFunctions.BaseFunction import BaseFunction
+
+
+# class Role(Enum):
+#     SYSTEM = "system"
+#     USER = "user"
+#     ASSISTANT = "assistant"
+#     FUNCTION = "function"
+
 
 class Conversation:
     def __init__(self, channel_id=None, is_thread=False):
         self.messages = [{"role": "system",
-                          "content": "You are a chatty Discord bot named 'Khoi Vi AI'. Be expressive with humor, "
-                                     "wit and banter."}]
+                          "content": "You are a chatty, expressive and informative Discord bot named 'Khôi Vĩ AI'. "
+                                     "Be helpful with humor and wit. "}]
         self.channel_id = channel_id
         self.is_thread = is_thread
 
@@ -83,7 +94,7 @@ async def on_message_create(event: MessageCreate):
 
     if convo:
         await ctx.channel.trigger_typing()
-        convo.add_message(role='user', content=message)
+        convo.add_message(role="user", content=message)
         response = send_message(convo)
         await ctx.channel.send(content=response)
 
@@ -188,18 +199,43 @@ async def check_legit_function(ctx: ContextMenuContext):
 
 
 def send_message(conversation: Conversation):
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
-        temperature=1.0,
-        messages=conversation.get_messages()
+        temperature=0.5,
+        messages=conversation.get_messages(),
+        # functions=[
+        #     {
+        #         "name": "search_arxiv",
+        #         "description": "Search arXiv for papers",
+        #         "parameters": {
+        #             "type": "object",
+        #             "properties": {
+        #                 "query": {
+        #                     "type": "string",
+        #                     "description": "The query to search for"
+        #                 },
+        #                 "max_results": {
+        #                     "type": "integer",
+        #                     "description": "The maximum number of results to return"
+        #                 },
+        #                 "sort_by": {
+        #                     "type": "string",
+        #                     "description": "The field to sort by (relevance, lastUpdatedDate, submittedDate)"
+        #                 }
+        #             },
+        #             "required": ["query"]
+        #         }
+        #     }
+        # ],
+        # function_call="auto"
     )
 
-    if response['usage']['total_tokens'] > 3072:
+    if response.usage.total_tokens > 8192:
         # send_branched_message(conversation, message="Summarize the conversation.")
-        while count_tokens(conversation=conversation) > 2048:
+        while count_tokens(conversation=conversation) > 4096:
             conversation.pop_message()
 
-    response_content = response['choices'][0]['message']['content']
+    response_content = response.choices[0].message.content
 
     # if add_message:
     conversation.add_message(role='assistant', content=response_content)
@@ -216,11 +252,11 @@ def send_branched_message(conversation: Conversation, message: str):
 
 
 def send_image_prompt(prompt):
-    image_resp = openai.Image.create(
+    image_resp = client.images.generate(
         prompt=prompt,
         n=1,
         size="512x512"
-    )['data'][0]['url']
+    ).data[0].url
     return image_resp
 
 
@@ -230,8 +266,44 @@ def count_tokens(conversation):
     return num_token
 
 
+# def load_functions_descriptions():
+#     functions = {}
+#     functions[BaseFunction.get_name()] = BaseFunction.get_description()
+
+
+# def arxiv_search(query: str, max_results: int = 10, sort_by: str = "relevance"):
+#     sort_criterion = None
+#     for criterion in arxiv.SortCriterion:
+#         if criterion.value.lower() == sort_by.lower():
+#             sort_criterion = criterion
+#             break
+#     if not sort_criterion:
+#         raise ValueError(f"Invalid sort criterion: {sort_by}")
+#     search = arxiv.Search(
+#         query=query,
+#         max_results=max_results,
+#         sort_by=sort_criterion
+#     )
+#     results = []
+#     for result in search.results():
+#         result_dict = {
+#             "title": result.title,
+#             "authors": result.authors,
+#             "summary": result.summary,
+#             "published": result.published,
+#             "updated": result.updated,
+#             "arxiv_url": result.entry_id,
+#             "pdf_url": result.pdf_url,
+#             "doi": result.doi,
+#         }
+#         results.append(result_dict)
+#     return results
+
+
 if __name__ == '__main__':
-    openai.api_key = os.getenv('OPENAI_API_KEY')
+    client = OpenAI(
+        api_key=os.getenv('OPENAI_API_KEY')
+    )
 
     intents = Intents.DEFAULT  # Set the intents to default
     intents.MESSAGE_CONTENTS = True  # Allow us to get the content of the message
