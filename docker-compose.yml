@@ -1,7 +1,7 @@
 version: '3'
 services:
   bot:
-    image: kvbot:23.11-gpt3.5
+    image: kvbot:23.12-gpt4
     build:
       context: .
       dockerfile: Dockerfile

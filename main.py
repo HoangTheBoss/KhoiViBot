@@ -200,8 +200,9 @@ async def check_legit_function(ctx: ContextMenuContext):
 
 def send_message(conversation: Conversation):
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4-1106-preview",
         temperature=0.5,
+        max_tokens=512,
         messages=conversation.get_messages(),
         # functions=[
         #     {
@@ -230,9 +231,9 @@ def send_message(conversation: Conversation):
         # function_call="auto"
     )
 
-    if response.usage.total_tokens > 8192:
+    if response.usage.total_tokens > 4096:
         # send_branched_message(conversation, message="Summarize the conversation.")
-        while count_tokens(conversation=conversation) > 4096:
+        while count_tokens(conversation=conversation) > 2048:
             conversation.pop_message()
 
     response_content = response.choices[0].message.content
